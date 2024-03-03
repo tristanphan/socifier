@@ -1,11 +1,12 @@
-import sys
+import os
 from typing import Optional
 
 import discord
 from discord import ApplicationContext
+from discord.ext import tasks
 
 from subscription import Subscription, SubscriptionManager
-from websoc import get_status
+from websoc import get_status, get_statuses_by_course_codes
 
 bot = discord.Bot()
 
@@ -57,7 +58,7 @@ async def unsubscribe_command(ctx: ApplicationContext, department: str, number: 
 
 @bot.slash_command(name="list")
 async def list_command(ctx: ApplicationContext):
-    subscriptions = list(SubscriptionManager.get_instance().get_subscriptions_for_user(ctx.user.id))
+    subscriptions = list(SubscriptionManager.get_instance().get_subscription_for_user(ctx.user.id))
     if len(subscriptions) == 0:
         await ctx.respond(
             f"You aren't subscribed to anything yet.",
@@ -78,4 +79,26 @@ async def on_ready():
     print("Ready")
 
 
-bot.run(sys.argv[1])
+previous_statuses = {}
+
+
+@tasks.loop(seconds=300)
+async def notify():
+    global previous_statuses
+
+    course_codes = list(SubscriptionManager.get_instance().get_subscriptions())
+    statuses = get_statuses_by_course_codes(course_codes)
+
+    if statuses is None:
+        return
+
+    for course, status in statuses:
+        if status != "full" and previous_statuses[course] == "full":
+            # make this function a thing
+            for user in SubscriptionManager.get_instance().get_users_by_subscription():
+                await bot.get_user(user).send(f"Course: {course} is {status}")
+
+    previous_statuses = statuses
+
+
+bot.run(os.environ.get("TOKEN"))

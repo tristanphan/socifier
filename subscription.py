@@ -1,7 +1,7 @@
 import dataclasses
 from typing import Dict, Iterable, Set, Tuple
 
-from types import Department, UserId, Number, Class, Status
+from datatypes import Department, UserId, Number, Class, Status
 
 
 @dataclasses.dataclass(frozen=True)
