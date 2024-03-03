@@ -3,7 +3,7 @@ from typing import Optional, List, Dict
 from discord import SlashCommand, ApplicationContext
 
 import websoc
-from course import Course, Status
+from course import Course, Status, CourseCache
 from datatypes import SectionCode
 from subscription import Subscription, SubscriptionManager
 
@@ -24,6 +24,7 @@ async def subscribe_command(ctx: ApplicationContext, section_code: SectionCode):
         return
 
     course, status = next(iter(result.items()))
+    CourseCache.get_instance().update(course, status)
 
     # Success
     await ctx.followup.send(
