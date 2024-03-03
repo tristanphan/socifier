@@ -28,8 +28,8 @@ async def subscribe_command(ctx: ApplicationContext, section_code: SectionCode):
 
     # Success
     await ctx.followup.send(
-        f"Subscribed to {course.department} {course.number} ({section_code}). Currently, the class is {status.name}."
-        f" We will notify you when the status changes.",
+        f"Subscribed to changes to {course}. Currently, the class is {status.name}."
+        f" I will notify you when the enrollment status changes.",
         ephemeral=True,
     )
 
@@ -44,7 +44,7 @@ async def unsubscribe_command(ctx: ApplicationContext, section_code: SectionCode
     success = SubscriptionManager.get_instance().unsubscribe(subscription)
     if success:
         await ctx.respond(
-            f"Unsubscribed to {section_code}.",
+            f"Unsubscribed from {section_code}.",
             ephemeral=True,
         )
 

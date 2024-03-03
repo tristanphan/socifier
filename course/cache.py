@@ -5,12 +5,12 @@ from course.course import Course, Status
 
 class CourseCache:
     """
-    Stores classes and their last known statuses
+    Stores courses and their last known statuses
     """
 
     def __init__(self):
         self._cache: Dict[Course, Status] = {}
-        # TODO it is probably a good idea to keep track of the staleness of classes in the cache
+        # TODO it is probably a good idea to keep track of the staleness of courses in the cache
         # example case: a class is in the cache, but is no longer updated because no user is subscribed to it
 
         # TODO this should also probably be serialized to disk so we can track when something changes over bot restart
@@ -30,7 +30,7 @@ class CourseCache:
     _instance = None
 
     @classmethod
-    def get_instance(cls):
+    def get_instance(cls) -> "CourseCache":
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance

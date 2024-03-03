@@ -25,7 +25,7 @@ class SubscriptionManager:
         # Maps users to their subscriptions
         # This schema is useful for per-user listing
         self._subscriptions: Dict[UserId, Set[Subscription]] = {}
-        self._classes: Dict[Course, Set[Subscription]] = {}
+        self._courses: Dict[Course, Set[Subscription]] = {}
 
     def subscribe(self, subscription: Subscription):
         """
@@ -36,7 +36,7 @@ class SubscriptionManager:
 
         # TODO save to disk lol
         self._subscriptions.setdefault(subscription.user, set()).add(subscription)
-        self._classes.setdefault(subscription.course, set()).add(subscription)
+        self._courses.setdefault(subscription.course, set()).add(subscription)
 
     def unsubscribe(self, subscription: Subscription) -> bool:
         if subscription not in self._subscriptions.get(subscription.user, set()):
@@ -44,13 +44,13 @@ class SubscriptionManager:
 
         # TODO save to disk lol
         self._subscriptions[subscription.user].remove(subscription)
-        self._classes[subscription.course].remove(subscription)
+        self._courses[subscription.course].remove(subscription)
 
         # Trim empty sets
         if len(self._subscriptions[subscription.user]) == 0:
             self._subscriptions.pop(subscription.user)
-        if len(self._classes[subscription.course]) == 0:
-            self._classes.pop(subscription.course)
+        if len(self._courses[subscription.course]) == 0:
+            self._courses.pop(subscription.course)
 
         return True
 
@@ -58,15 +58,15 @@ class SubscriptionManager:
         """
         :return: An iterable over all subscriptions
         """
-        for subscriptions in self._subscriptions.values():
-            yield from subscriptions
+        for subscriptions in list(self._subscriptions.values()):
+            yield from set(subscriptions)
 
     def get_subscription_for_user(self, user: UserId) -> Iterable[Subscription]:
         """
         :param user: The user to get subscriptions for
         :return: An iterable over the user's subscriptions
         """
-        yield from self._subscriptions.get(user, set())
+        yield from set(self._subscriptions.get(user, set()))
 
     def get_courses(self) -> Iterable[Course]:
         """
@@ -74,10 +74,17 @@ class SubscriptionManager:
         """
         yield from set(subscription.course for subscription in self.get_subscriptions())
 
+    def get_users_by_course(self, course: Course) -> Iterable[UserId]:
+        """
+        :param course: The course to search users by
+        :return: An iterable over the users subscribed to the course
+        """
+        yield from {s.user for s in set(self._courses.get(course, set()))}
+
     _instance = None
 
     @classmethod
-    def get_instance(cls):
+    def get_instance(cls) -> "SubscriptionManager":
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
