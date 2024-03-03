@@ -1,40 +1,42 @@
 import dataclasses
-from typing import Dict, Iterable, Set, Tuple
+from typing import Dict, Iterable, Set
 
-from datatypes import Department, UserId, Number, Class, Status
+from course import Course
+from datatypes import UserId
 
 
 @dataclasses.dataclass(frozen=True)
 class Subscription:
     user: UserId
-    department: Department
-    number: Number
+    course: Course
 
-    def get_class(self) -> Class:
-        return self.department, self.number
-
-    def copy_with(self, user=None, department=None, number=None):
+    def copy_with(self, user=None, course=None):
         return Subscription(
             user or self.user,
-            department or self.department,
-            number or self.number,
+            course or self.course,
         )
 
 
 class SubscriptionManager:
-    _instance = None
 
     def __init__(self):
         # TODO load from disk lol
-        self._subscriptions: Dict[UserId, Set[Subscription]] = {}
-        self._classes: Dict[Class, Set[Subscription]] = {}
-        self._status_cache: Dict[Class, Status] = {}
 
-    def subscribe(self, subscription: Subscription, status: Status):
+        # Maps users to their subscriptions
+        # This schema is useful for per-user listing
+        self._subscriptions: Dict[UserId, Set[Subscription]] = {}
+        self._classes: Dict[Course, Set[Subscription]] = {}
+
+    def subscribe(self, subscription: Subscription):
+        """
+        Subscribes the user to changes to a course status
+        :param subscription: The user's subscription model
+        :return:
+        """
+
         # TODO save to disk lol
         self._subscriptions.setdefault(subscription.user, set()).add(subscription)
-        self._classes.setdefault(subscription.get_class(), set().add(subscription))
-        self._status_cache[subscription.get_class()] = status
+        self._classes.setdefault(subscription.course, set()).add(subscription)
 
     def unsubscribe(self, subscription: Subscription) -> bool:
         if subscription not in self._subscriptions.get(subscription.user, set()):
@@ -42,28 +44,37 @@ class SubscriptionManager:
 
         # TODO save to disk lol
         self._subscriptions[subscription.user].remove(subscription)
-        self._classes[subscription.get_class()].remove(subscription)
+        self._classes[subscription.course].remove(subscription)
+
+        # Trim empty sets
         if len(self._subscriptions[subscription.user]) == 0:
             self._subscriptions.pop(subscription.user)
-        if len(self._classes[subscription.get_class()]) == 0:
-            self._classes.pop(subscription.get_class())
-            self._status_cache.pop(subscription.get_class())
+        if len(self._classes[subscription.course]) == 0:
+            self._classes.pop(subscription.course)
 
         return True
 
     def get_subscriptions(self) -> Iterable[Subscription]:
+        """
+        :return: An iterable over all subscriptions
+        """
         for subscriptions in self._subscriptions.values():
             yield from subscriptions
 
     def get_subscription_for_user(self, user: UserId) -> Iterable[Subscription]:
+        """
+        :param user: The user to get subscriptions for
+        :return: An iterable over the user's subscriptions
+        """
         yield from self._subscriptions.get(user, set())
 
-    def get_users_for_class(self, cls: Class) -> Iterable[UserId]:
-        yield from self._classes.get(cls, set())
+    def get_courses(self) -> Iterable[Course]:
+        """
+        :return: An iterable of unique courses that users are subscribed to
+        """
+        yield from set(subscription.course for subscription in self.get_subscriptions())
 
-    def get_classes(self) -> Iterable[Tuple[Class, Status]]:
-        for cls, status in self._classes.items():
-            yield cls, status
+    _instance = None
 
     @classmethod
     def get_instance(cls):

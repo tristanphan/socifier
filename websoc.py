@@ -3,56 +3,40 @@ from typing import Optional, Dict, List
 import requests
 from requests import Response
 
+from course import Course, Status
+from datatypes import SectionCode
+
 URL = "https://api.peterportal.org/rest/v0/schedule/soc"
 
 
-def get_status(department: str, number: str) -> Optional[str]:
+def get_course_statuses(codes: List[SectionCode]) -> Optional[Dict[Course, Status]]:
     params = {
         "term": "2024 Spring",
-        "department": department,
-        "courseNumber": number,
+        "sectionCodes": ",".join(map(str, codes))
     }
-
     response: Response = requests.get(URL, params=params)
+    content = response.json()
+
     if response.status_code != 200:
+        # Bad response
         return None
 
-    try:
-        course = response.json()["schools"][0]["departments"][0]["courses"][0]
-    except IndexError:
-        return None
+    courses: Dict[Course, Status] = {}
+    for school_json in content["schools"]:
+        for department_json in school_json["departments"]:
+            for course_json in department_json["courses"]:
+                for section_json in course_json["sections"]:
+                    # Collect course
+                    course = Course(
+                        code=int(section_json["sectionCode"]),
+                        department=course_json["deptCode"],
+                        number=course_json["courseNumber"],
+                        title=course_json["courseTitle"],
+                    )
 
-    # Find the lecture
-    lecture = list(filter(lambda s: s["sectionType"] == "Lec", course["sections"]))[0]
+                    # Collect status
+                    status = section_json["status"].lower()
 
-    return lecture["status"].lower()
+                    courses[course] = Status(status)
 
-
-def get_status_by_course_code(course_code: int) -> Optional[str]:
-    result = get_statuses_by_course_codes([course_code])
-    if result is None:
-        return None
-    else:
-        return result[course_code]
-
-
-def get_statuses_by_course_codes(course_codes: List[int]) -> Optional[Dict[int, str]]:
-    params = {
-        "term": "2024 Spring",
-        "sectionCodes": ",".join(str(c) for c in course_codes),
-    }
-
-    response: Response = requests.get(URL, params=params)
-    if response.status_code != 200:
-        return None
-
-    statuses = {}
-    for sch in response.json()["schools"]:
-        for dept in sch["departments"]:
-            for courses in dept["courses"]:
-                for sec in courses["sections"]:
-                    print(f"{courses['deptCode']} {courses['courseNumber']}: {courses['courseTitle']} "
-                          f"(Section Code: {sec['sectionCode']}) is {sec['status']}")
-                    statuses[int(sec['sectionCode'])] = sec['status'].lower()
-
-    return statuses
+    return courses

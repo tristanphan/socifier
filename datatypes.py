@@ -1,7 +1,7 @@
-from typing import Tuple
-
+# User information
 UserId = int
+
+# Course information
+SectionCode = int
 Department = str
-Number = str
-Class = Tuple[str, str]
-Status = str
+CourseNumber = str
