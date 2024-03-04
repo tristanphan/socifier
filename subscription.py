@@ -3,6 +3,10 @@ from typing import Dict, Iterable, Set
 
 from course import Course
 from datatypes import UserId
+import serializer
+
+SUBSCRIPTION_FILEPATH = "data/subscriptions.json"
+COURSES_FILEPATH = "data/courses.json"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -18,14 +22,21 @@ class Subscription:
 
 
 class SubscriptionManager:
+    """
+    Manages user subscriptions and provides a singleton
+    """
 
     def __init__(self):
-        # TODO load from disk lol
+        """
+        Maps users to their subscriptions
+        This schema is useful for per-user listing
+        """
 
-        # Maps users to their subscriptions
-        # This schema is useful for per-user listing
-        self._subscriptions: Dict[UserId, Set[Subscription]] = {}
-        self._courses: Dict[Course, Set[Subscription]] = {}
+        subs = serializer.load(SUBSCRIPTION_FILEPATH)
+        courses = serializer.load(COURSES_FILEPATH)
+
+        self._subscriptions: Dict[UserId, Set[Subscription]] = subs or {}
+        self._courses: Dict[Course, Set[Subscription]] = courses or {}
 
     def subscribe(self, subscription: Subscription):
         """
@@ -34,17 +45,21 @@ class SubscriptionManager:
         :return:
         """
 
-        # TODO save to disk lol
         self._subscriptions.setdefault(subscription.user, set()).add(subscription)
         self._courses.setdefault(subscription.course, set()).add(subscription)
+
+        serializer.dump(self._subscriptions, SUBSCRIPTION_FILEPATH)
+        serializer.dump(self._courses, COURSES_FILEPATH)
 
     def unsubscribe(self, subscription: Subscription) -> bool:
         if subscription not in self._subscriptions.get(subscription.user, set()):
             return False
 
-        # TODO save to disk lol
         self._subscriptions[subscription.user].remove(subscription)
         self._courses[subscription.course].remove(subscription)
+
+        serializer.dump(self._subscriptions, SUBSCRIPTION_FILEPATH)
+        serializer.dump(self._courses, COURSES_FILEPATH)
 
         # Trim empty sets
         if len(self._subscriptions[subscription.user]) == 0:

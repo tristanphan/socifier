@@ -1,6 +1,9 @@
 from typing import Dict, Optional
 
 from course.course import Course, Status
+import serializer
+
+COURSE_CACHE_FILEPATH = "data/course_cache.json"
 
 
 class CourseCache:
@@ -9,11 +12,11 @@ class CourseCache:
     """
 
     def __init__(self):
-        self._cache: Dict[Course, Status] = {}
+        cache = serializer.load(COURSE_CACHE_FILEPATH)
+        
         # TODO it is probably a good idea to keep track of the staleness of courses in the cache
         # example case: a class is in the cache, but is no longer updated because no user is subscribed to it
-
-        # TODO this should also probably be serialized to disk so we can track when something changes over bot restart
+        self._cache: Dict[Course, Status] = cache or {}
 
     def lookup(self, course: Course) -> Optional[Status]:
         """
@@ -26,6 +29,8 @@ class CourseCache:
         Replaces the current entry for the course with the new status
         """
         self._cache[course] = status
+
+        serializer.dump(self._cache, COURSE_CACHE_FILEPATH)
 
     _instance = None
 
