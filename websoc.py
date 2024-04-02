@@ -5,6 +5,7 @@ from requests import Response
 
 from course import Course, Status
 from datatypes import SectionCode
+from logger import logger
 
 URL = "https://api.peterportal.org/rest/v0/schedule/soc"
 
@@ -16,6 +17,8 @@ def get_course_statuses(codes: List[SectionCode]) -> Optional[Dict[Course, Statu
     }
     response: Response = requests.get(URL, params=params)
     content = response.json()
+
+    logger.info(f"[WebSoc] Requested {codes} and got {response.status_code}")
 
     if response.status_code != 200:
         # Bad response
@@ -33,6 +36,7 @@ def get_course_statuses(codes: List[SectionCode]) -> Optional[Dict[Course, Statu
                         number=course_json["courseNumber"],
                         title=course_json["courseTitle"],
                     )
+                    logger.info(f"[WebSoc] Found course {course}")
 
                     # Collect status
                     status = section_json["status"].lower()

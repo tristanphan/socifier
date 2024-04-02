@@ -10,7 +10,7 @@ from datatypes import CourseNumber, Department, SectionCode
 class Status(Enum):
     new_only = ("newonly", "New Only", Colour.blue())
     open = ("open", "Open", Colour.green())
-    waitlist = ("waitl", "Waitlisted", Colour.orange())
+    waitlist = ("waitl", "Waitlist", Colour.orange())
     full = ("full", "Full", Colour.red())
 
     def __new__(cls, value, display, color):

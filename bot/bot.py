@@ -4,6 +4,7 @@ from discord import Bot
 
 import scheduler
 from bot.slash_commands import commands
+from logger import logger
 
 
 class DiscordBot(Bot):
@@ -19,7 +20,7 @@ class DiscordBot(Bot):
             self.add_application_command(command)
 
     async def on_ready(self):
-        print(f"Ready! Logged in as {self.user.name} ({self.user.id})")
+        logger.info(f"Ready! Logged in as {self.user.name} ({self.user.id})")
         scheduler.update.start()
 
     _instance = None

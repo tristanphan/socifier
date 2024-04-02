@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 import jsonpickle
@@ -23,7 +24,7 @@ def load(filepath) -> Optional[object]:
         with open(filepath, "r") as f:
             obj = jsonpickle.decode(f.read(), keys=True)
     except FileNotFoundError:
-        print(f"Couldn't load json file specified by the path: {filepath}")
+        logging.error(f"[Deserializer] Could not find JSON file: {filepath}")
         return None
 
     return obj
