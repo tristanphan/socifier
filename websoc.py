@@ -1,3 +1,4 @@
+from json import JSONDecodeError
 from typing import Optional, Dict, List
 
 import requests
@@ -12,16 +13,21 @@ URL = "https://api.peterportal.org/rest/v0/schedule/soc"
 
 def get_course_statuses(codes: List[SectionCode]) -> Optional[Dict[Course, Status]]:
     params = {
-        "term": "2024 Spring",
+        "term": "2024 Fall",
         "sectionCodes": ",".join(map(str, codes))
     }
     response: Response = requests.get(URL, params=params)
-    content = response.json()
+    try:
+        content = response.json()
+    except JSONDecodeError:
+        logger.error(f"[WebSoc] Failed to parse JSON response (status code {response.status_code}): {response.text}")
+        return None
 
     logger.info(f"[WebSoc] Requested {codes} and got {response.status_code}")
 
     if response.status_code != 200:
         # Bad response
+        logger.error(f"[WebSoc] Failed to get course statuses (status code {response.status_code}): {content}")
         return None
 
     courses: Dict[Course, Status] = {}

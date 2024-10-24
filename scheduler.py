@@ -6,8 +6,8 @@ from discord.ext import tasks
 from discord.ui import View, Item, Button
 
 from course import CourseCache, Course, Status
-from subscription import SubscriptionManager, Subscription
 from logger import obfuscate, logger
+from subscription import SubscriptionManager, Subscription
 from websoc import get_course_statuses
 
 FREQUENCY = 300  # seconds
@@ -22,15 +22,13 @@ async def update():
 
     from bot import DiscordBot
 
-    logger.info("[Update] Starting...")
-
     subscriptions = SubscriptionManager.get_instance().get_subscriptions()
-    section_codes = [s.course.code for s in subscriptions]
+    section_codes = sorted({s.course.code for s in subscriptions})
     if len(section_codes) == 0:
         logger.info("[Update] No subscriptions to fetch, no action to be done")
         return
 
-    logger.info(f"[Update] Requesting section codes: {section_codes}")
+    logger.info(f"[Update] Starting to {len(section_codes)} subscriptions, section codes: {section_codes}")
     statuses = get_course_statuses(section_codes)
 
     # Something went wrong
